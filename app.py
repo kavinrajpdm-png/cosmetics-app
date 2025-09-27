@@ -32,16 +32,22 @@ if category_df.empty:
     st.stop()
 
 # ---------------------------
-# Select skin type
+# Multi-select skin type
 # ---------------------------
-skin_types = ['All', 'Dry', 'Oily', 'Normal', 'Combination', 'Sensitive']
-if 'Dry' in category_df.columns and 'Oily' in category_df.columns and 'Normal' in category_df.columns and 'Combination' in category_df.columns and 'Sensitive' in category_df.columns:
-    skin_filter = st.selectbox("Filter by Skin Type:", skin_types)
-    if skin_filter != "All":
-        category_df = category_df[category_df[skin_filter] == 1].reset_index(drop=True)
-        if category_df.empty:
-            st.error(f"No products found for {skin_filter} skin in this category")
-            st.stop()
+skin_types = ['Dry', 'Oily', 'Normal', 'Combination', 'Sensitive']
+selected_skin_types = st.multiselect("Filter by Skin Type (select one or more):", options=skin_types, default=skin_types)
+
+if selected_skin_types:
+    # Keep products that match ANY of the selected skin types
+    mask = np.zeros(len(category_df), dtype=bool)
+    for skin in selected_skin_types:
+        if skin in category_df.columns:
+            mask |= (category_df[skin] == 1)
+    category_df = category_df[mask].reset_index(drop=True)
+    
+    if category_df.empty:
+        st.error(f"No products found for selected skin type(s): {', '.join(selected_skin_types)}")
+        st.stop()
 
 # ---------------------------
 # Tokenize ingredients and create document-term matrix
@@ -100,7 +106,7 @@ fig = px.scatter(
     y='Y',
     hover_data=['Name', 'Brand', 'Price', 'Rank'],
     color='Brand',
-    title=f"{category} Ingredient Similarity (t-SNE) - Skin Type: {skin_filter}"
+    title=f"{category} Ingredient Similarity (t-SNE) - Skin Type(s): {', '.join(selected_skin_types)}"
 )
 
 st.subheader("Interactive Ingredient Similarity Plot")
