@@ -4,30 +4,31 @@ import numpy as np
 from sklearn.manifold import TSNE
 from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource, HoverTool
-import os
 
+st.set_page_config(page_title="Moisturizer Ingredient Explorer", layout="wide")
 st.title("Moisturizer Ingredient Explorer")
 
 # ---------------------------
-# Check files in repo (debugging)
-# ---------------------------
-st.write("Files available in repo:", os.listdir())
-
-# ---------------------------
-# Load data
+# Load dataset
 # ---------------------------
 @st.cache_data
 def load_data():
-    # Make sure the Excel file name matches exactly
-    df = pd.read_excel("Cosmeticdata.xlsx")
-    # Filter for moisturizers suitable for dry skin
-    moisturizers_dry = df[(df['Label'] == "Moisturizer") & (df['Dry'] == 1)].reset_index(drop=True)
-    return moisturizers_dry
+    try:
+        df = pd.read_excel("Cosmeticdata.xlsx")  # Make sure this file is in the same repo
+        return df
+    except FileNotFoundError:
+        st.error("Dataset 'Cosmeticdata.xlsx' not found in the repo!")
+        st.stop()
 
-try:
-    df = load_data()
-except FileNotFoundError:
-    st.error("The dataset file 'Cosmeticdata.xlsx' was not found. Make sure it is in the repo with app.py.")
+df = load_data()
+
+# ---------------------------
+# Filter moisturizers for dry skin
+# ---------------------------
+moisturizers_dry = df[(df['Label'] == "Moisturizer") & (df['Dry'] == 1)].reset_index(drop=True)
+
+if moisturizers_dry.empty:
+    st.error("No moisturizers for dry skin found in the dataset!")
     st.stop()
 
 # ---------------------------
@@ -37,7 +38,7 @@ ingredient_idx = {}
 idx = 0
 corpus = []
 
-for ingredients_text in df['Ingredients']:
+for ingredients_text in moisturizers_dry['Ingredients']:
     if pd.isna(ingredients_text):
         tokens = []
     else:
@@ -63,16 +64,20 @@ for i, tokens in enumerate(corpus):
 # ---------------------------
 # t-SNE dimensionality reduction
 # ---------------------------
-tsne_model = TSNE(n_components=2, learning_rate=200, random_state=42)
-tsne_features = tsne_model.fit_transform(A)
-df['X'] = tsne_features[:, 0]
-df['Y'] = tsne_features[:, 1]
+if A.shape[0] > 1 and A.shape[1] > 0:  # ensure matrix is not empty
+    tsne_model = TSNE(n_components=2, learning_rate=200, random_state=42)
+    tsne_features = tsne_model.fit_transform(A)
+    moisturizers_dry['X'] = tsne_features[:, 0]
+    moisturizers_dry['Y'] = tsne_features[:, 1]
+else:
+    moisturizers_dry['X'] = 0
+    moisturizers_dry['Y'] = 0
 
 # ---------------------------
-# Streamlit UI
+# Streamlit UI - product selection
 # ---------------------------
-product_name = st.selectbox("Select a moisturizer:", df['Name'])
-selected = df[df['Name'] == product_name]
+product_name = st.selectbox("Select a moisturizer:", moisturizers_dry['Name'])
+selected = moisturizers_dry[moisturizers_dry['Name'] == product_name]
 
 st.subheader("Product Details")
 st.write(selected[['Brand', 'Price', 'Rank', 'Ingredients']])
@@ -80,9 +85,12 @@ st.write(selected[['Brand', 'Price', 'Rank', 'Ingredients']])
 # ---------------------------
 # Bokeh t-SNE plot
 # ---------------------------
-source = ColumnDataSource(df)
-p = figure(title="t-SNE of Moisturizers (Dry Skin)", width=800, height=600,
+source = ColumnDataSource(moisturizers_dry)
+
+p = figure(title="t-SNE Plot of Moisturizers (Dry Skin)",
+           width=800, height=600,
            x_axis_label="T-SNE 1", y_axis_label="T-SNE 2")
+
 p.circle('X', 'Y', size=8, source=source, alpha=0.7)
 
 hover = HoverTool(tooltips=[("Item", "@Name"),
@@ -93,6 +101,3 @@ p.add_tools(hover)
 
 st.subheader("Interactive Similarity Plot")
 st.bokeh_chart(p)
-
-
-
