@@ -19,7 +19,7 @@ st.write("Files available in repo:", os.listdir())
 @st.cache_data
 def load_data():
     # Make sure the Excel file name matches exactly
-    df = pd.read_excel("cosmeticdata.xlsx")
+    df = pd.read_excel("Cosmeticdata.xlsx")
     # Filter for moisturizers suitable for dry skin
     moisturizers_dry = df[(df['Label'] == "Moisturizer") & (df['Dry'] == 1)].reset_index(drop=True)
     return moisturizers_dry
@@ -27,7 +27,7 @@ def load_data():
 try:
     df = load_data()
 except FileNotFoundError:
-    st.error("The dataset file 'cosmeticdata.xlsx' was not found. Make sure it is in the repo with app.py.")
+    st.error("The dataset file 'Cosmeticdata.xlsx' was not found. Make sure it is in the repo with app.py.")
     st.stop()
 
 # ---------------------------
@@ -93,5 +93,6 @@ p.add_tools(hover)
 
 st.subheader("Interactive Similarity Plot")
 st.bokeh_chart(p)
+
 
 
