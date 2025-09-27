@@ -4,8 +4,8 @@ import numpy as np
 from sklearn.manifold import TSNE
 import plotly.express as px
 
-st.set_page_config(page_title="Moisturizer Ingredient Explorer", layout="wide")
-st.title("Moisturizer Ingredient Explorer")
+st.set_page_config(page_title="Cosmetic Product Explorer", layout="wide")
+st.title("Cosmetic Product Ingredient Explorer")
 
 # ---------------------------
 # Load dataset
@@ -22,13 +22,25 @@ def load_data():
 df = load_data()
 
 # ---------------------------
-# Filter moisturizers for dry skin
+# Select product category
 # ---------------------------
-moisturizers_dry = df[(df['Label'] == "Moisturizer") & (df['Dry'] == 1)].reset_index(drop=True)
+category = st.selectbox("Select Product Category:", df['Label'].unique())
+category_df = df[df['Label'] == category].reset_index(drop=True)
 
-if moisturizers_dry.empty:
-    st.error("No moisturizers for dry skin found!")
+if category_df.empty:
+    st.error(f"No products found for category: {category}")
     st.stop()
+
+# ---------------------------
+# Optional: filter by skin type
+# ---------------------------
+if 'Dry' in category_df.columns:
+    skin_filter = st.selectbox("Filter by Dry Skin?", ["All", "Yes"])
+    if skin_filter == "Yes":
+        category_df = category_df[category_df['Dry'] == 1].reset_index(drop=True)
+        if category_df.empty:
+            st.error("No products found for dry skin in this category")
+            st.stop()
 
 # ---------------------------
 # Tokenize ingredients and create document-term matrix
@@ -37,7 +49,7 @@ ingredient_idx = {}
 idx = 0
 corpus = []
 
-for ingredients_text in moisturizers_dry['Ingredients']:
+for ingredients_text in category_df['Ingredients']:
     if pd.isna(ingredients_text):
         tokens = []
     else:
@@ -58,23 +70,22 @@ for i, tokens in enumerate(corpus):
         A[i, j] = 1
 
 # ---------------------------
-# Compute t-SNE (safe)
+# Compute t-SNE
 # ---------------------------
 if A.shape[0] > 1 and A.shape[1] > 0:
     tsne_model = TSNE(n_components=2, learning_rate=200, random_state=42)
     tsne_features = tsne_model.fit_transform(A)
-    moisturizers_dry['X'] = tsne_features[:, 0]
-    moisturizers_dry['Y'] = tsne_features[:, 1]
+    category_df['X'] = tsne_features[:, 0]
+    category_df['Y'] = tsne_features[:, 1]
 else:
-    # fallback for very small dataset
-    moisturizers_dry['X'] = np.arange(len(moisturizers_dry))
-    moisturizers_dry['Y'] = np.arange(len(moisturizers_dry))
+    category_df['X'] = np.arange(len(category_df))
+    category_df['Y'] = np.arange(len(category_df))
 
 # ---------------------------
 # Product selection
 # ---------------------------
-product_name = st.selectbox("Select a moisturizer:", moisturizers_dry['Name'])
-selected = moisturizers_dry[moisturizers_dry['Name'] == product_name]
+product_name = st.selectbox("Select a product:", category_df['Name'])
+selected = category_df[category_df['Name'] == product_name]
 
 st.subheader("Product Details")
 st.write(selected[['Brand', 'Price', 'Rank', 'Ingredients']])
@@ -83,12 +94,12 @@ st.write(selected[['Brand', 'Price', 'Rank', 'Ingredients']])
 # Interactive t-SNE Plot with Plotly
 # ---------------------------
 fig = px.scatter(
-    moisturizers_dry,
+    category_df,
     x='X',
     y='Y',
     hover_data=['Name', 'Brand', 'Price', 'Rank'],
     color='Brand',
-    title="Moisturizer Ingredient Similarity (t-SNE)"
+    title=f"{category} Ingredient Similarity (t-SNE)"
 )
 
 st.subheader("Interactive Ingredient Similarity Plot")
