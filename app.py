@@ -10,7 +10,7 @@ from bokeh.models import ColumnDataSource, HoverTool
 # ---------------------------
 @st.cache_data
 def load_data():
-    df = pd.read_excel("Cosmetics_cleaned dataset.xlsx")
+    df = pd.read_excel("Cosmeticsdata.xlsx")
     # Filter for moisturizers suitable for dry skin
     moisturizers_dry = df[(df['Label'] == "Moisturizer") & (df['Dry'] == 1)].reset_index(drop=True)
     return moisturizers_dry
@@ -86,4 +86,5 @@ p.add_tools(hover)
 
 st.subheader("Interactive Similarity Plot")
 st.bokeh_chart(p)
+
 
