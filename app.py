@@ -1,8 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from bokeh.plotting import figure
-from bokeh.models import ColumnDataSource, HoverTool
 
 st.title("Moisturizer Ingredient Explorer")
 
@@ -12,7 +10,7 @@ st.title("Moisturizer Ingredient Explorer")
 @st.cache_data
 def load_data():
     try:
-        df = pd.read_excel("Cosmeticdata.xlsx")  # Ensure file name matches
+        df = pd.read_excel("Cosmeticdata.xlsx")
         return df
     except FileNotFoundError:
         st.error("Dataset 'Cosmeticdata.xlsx' not found in repo!")
@@ -30,7 +28,7 @@ if moisturizers_dry.empty:
     st.stop()
 
 # ---------------------------
-# Streamlit UI - product selection
+# Product selection
 # ---------------------------
 product_name = st.selectbox("Select a moisturizer:", moisturizers_dry['Name'])
 selected = moisturizers_dry[moisturizers_dry['Name'] == product_name]
@@ -39,28 +37,13 @@ st.subheader("Product Details")
 st.write(selected[['Brand', 'Price', 'Rank', 'Ingredients']])
 
 # ---------------------------
-# Safe Bokeh plot - ensure numeric coordinates
+# Safe scatter plot using Streamlit
 # ---------------------------
-# Create safe numeric X and Y columns
-moisturizers_dry = moisturizers_dry.copy()
-moisturizers_dry['X'] = np.arange(len(moisturizers_dry), dtype=float)
-moisturizers_dry['Y'] = np.arange(len(moisturizers_dry), dtype=float)
+st.subheader("Interactive Plot (Random Coordinates)")
 
-# Remove NaNs in columns required for hover
-for col in ['Name', 'Brand', 'Price', 'Rank']:
-    if col not in moisturizers_dry.columns:
-        moisturizers_dry[col] = "Unknown"
-    else:
-        moisturizers_dry[col] = moisturizers_dry[col].fillna("Unknown")
+# Generate safe numeric X and Y
+moisturizers_dry['X'] = np.arange(len(moisturizers_dry))
+moisturizers_dry['Y'] = np.arange(len(moisturizers_dry))
 
-source = ColumnDataSource(moisturizers_dry)
-
-p = figure(title="Moisturizer Similarity Plot (Safe Coordinates)", width=800, height=600,
-           x_axis_label="X", y_axis_label="Y")
-p.circle('X', 'Y', size=8, source=source, alpha=0.7)
-
-hover = HoverTool(tooltips=[("Item", "@Name"), ("Brand", "@Brand"), ("Price", "@Price"), ("Rank", "@Rank")])
-p.add_tools(hover)
-
-st.subheader("Interactive Plot")
-st.bokeh_chart(p)
+# Plot using Streamlit
+st.scatter_chart(moisturizers_dry[['X', 'Y']])
