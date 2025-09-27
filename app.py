@@ -32,14 +32,15 @@ if category_df.empty:
     st.stop()
 
 # ---------------------------
-# Optional: filter by skin type
+# Select skin type
 # ---------------------------
-if 'Dry' in category_df.columns:
-    skin_filter = st.selectbox("Filter by Dry Skin?", ["All", "Yes"])
-    if skin_filter == "Yes":
-        category_df = category_df[category_df['Dry'] == 1].reset_index(drop=True)
+skin_types = ['All', 'Dry', 'Oily', 'Normal', 'Combination', 'Sensitive']
+if 'Dry' in category_df.columns and 'Oily' in category_df.columns and 'Normal' in category_df.columns and 'Combination' in category_df.columns and 'Sensitive' in category_df.columns:
+    skin_filter = st.selectbox("Filter by Skin Type:", skin_types)
+    if skin_filter != "All":
+        category_df = category_df[category_df[skin_filter] == 1].reset_index(drop=True)
         if category_df.empty:
-            st.error("No products found for dry skin in this category")
+            st.error(f"No products found for {skin_filter} skin in this category")
             st.stop()
 
 # ---------------------------
@@ -99,7 +100,7 @@ fig = px.scatter(
     y='Y',
     hover_data=['Name', 'Brand', 'Price', 'Rank'],
     color='Brand',
-    title=f"{category} Ingredient Similarity (t-SNE)"
+    title=f"{category} Ingredient Similarity (t-SNE) - Skin Type: {skin_filter}"
 )
 
 st.subheader("Interactive Ingredient Similarity Plot")
