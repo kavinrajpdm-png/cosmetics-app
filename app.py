@@ -12,7 +12,7 @@ st.title("Moisturizer Ingredient Explorer")
 @st.cache_data
 def load_data():
     try:
-        df = pd.read_excel("Cosmeticdata.xlsx")  # Updated dataset name
+        df = pd.read_excel("Cosmeticdata.xlsx")  # Ensure file name matches
         return df
     except FileNotFoundError:
         st.error("Dataset 'Cosmeticdata.xlsx' not found in repo!")
@@ -39,18 +39,27 @@ st.subheader("Product Details")
 st.write(selected[['Brand', 'Price', 'Rank', 'Ingredients']])
 
 # ---------------------------
-# Safe Bokeh plot (random coordinates)
+# Safe Bokeh plot - ensure numeric coordinates
 # ---------------------------
-np.random.seed(42)
-moisturizers_dry['X'] = np.random.rand(len(moisturizers_dry))
-moisturizers_dry['Y'] = np.random.rand(len(moisturizers_dry))
+# Create safe numeric X and Y columns
+moisturizers_dry = moisturizers_dry.copy()
+moisturizers_dry['X'] = np.arange(len(moisturizers_dry), dtype=float)
+moisturizers_dry['Y'] = np.arange(len(moisturizers_dry), dtype=float)
+
+# Remove NaNs in columns required for hover
+for col in ['Name', 'Brand', 'Price', 'Rank']:
+    if col not in moisturizers_dry.columns:
+        moisturizers_dry[col] = "Unknown"
+    else:
+        moisturizers_dry[col] = moisturizers_dry[col].fillna("Unknown")
 
 source = ColumnDataSource(moisturizers_dry)
-p = figure(title="Moisturizer Similarity Plot (Random Coordinates)", width=800, height=600,
+
+p = figure(title="Moisturizer Similarity Plot (Safe Coordinates)", width=800, height=600,
            x_axis_label="X", y_axis_label="Y")
 p.circle('X', 'Y', size=8, source=source, alpha=0.7)
 
-hover = HoverTool(tooltips=[("Item", "@Name"), ("Brand", "@Brand"), ("Price", "$@Price"), ("Rank", "@Rank")])
+hover = HoverTool(tooltips=[("Item", "@Name"), ("Brand", "@Brand"), ("Price", "@Price"), ("Rank", "@Rank")])
 p.add_tools(hover)
 
 st.subheader("Interactive Plot")
