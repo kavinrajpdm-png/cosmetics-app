@@ -27,7 +27,7 @@ def load_data():
 try:
     df = load_data()
 except FileNotFoundError:
-    st.error("The dataset file 'cosmetics.xlsx' was not found. Make sure it is in the repo with app.py.")
+    st.error("The dataset file 'cosmeticdata.xlsx' was not found. Make sure it is in the repo with app.py.")
     st.stop()
 
 # ---------------------------
@@ -93,4 +93,5 @@ p.add_tools(hover)
 
 st.subheader("Interactive Similarity Plot")
 st.bokeh_chart(p)
+
 
