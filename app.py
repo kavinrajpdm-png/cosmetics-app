@@ -19,7 +19,7 @@ st.write("Files available in repo:", os.listdir())
 @st.cache_data
 def load_data():
     # Make sure the Excel file name matches exactly
-    df = pd.read_excel("cosmeticsdata.xlsx")
+    df = pd.read_excel("cosmeticdata.xlsx")
     # Filter for moisturizers suitable for dry skin
     moisturizers_dry = df[(df['Label'] == "Moisturizer") & (df['Dry'] == 1)].reset_index(drop=True)
     return moisturizers_dry
@@ -93,3 +93,4 @@ p.add_tools(hover)
 
 st.subheader("Interactive Similarity Plot")
 st.bokeh_chart(p)
+
